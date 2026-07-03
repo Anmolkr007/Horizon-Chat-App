@@ -1,6 +1,18 @@
-const UserCard = () => {
+import { useChatStore } from "../store/chatStore.js";
+
+
+const UserCard = ({user}) => {
+  const {getUserById} = useChatStore();
+  const handleClick = async()=>{
+    try {
+      await getUserById(user.id,user.profilepic_url,user.name)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
   return (
-    <div
+    <div onClick={handleClick}
       className="
       group
       relative
@@ -31,7 +43,7 @@ const UserCard = () => {
       <div className="relative flex items-center gap-4">
         <div className="relative">
           <img
-            src="https://i.pravatar.cc/100"
+            src={user.profilepic_url}
             alt=""
             className="
             w-14
@@ -66,7 +78,7 @@ const UserCard = () => {
               transition-colors
             "
             >
-              Lisa Roy
+              {user.name}
             </h3>
 
             <span className="text-zinc-500 text-xs">

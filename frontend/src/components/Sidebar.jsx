@@ -1,27 +1,65 @@
-import { Search, Pencil } from "lucide-react";
-import { useState } from "react";
-import { useAuthStore } from "../store/authStore";
-import UserCard from "./UserCard";
+import { Search, Pencil, UserSearch } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuthStore } from "../store/authStore.js";
+import { useChatStore } from "../store/chatStore.js";
+import UserCard from "./UserCard.jsx";
 
 const Sidebar = () => {
   const { user } = useAuthStore();
   const [filter, setFilter] = useState("all");
+  const [userSearch, setUserSearch] = useState("");
+  console.log(userSearch);
+  
 
-  // temporary data
-  const users = [1, 2, 3, 4, 5, 6];
+  const {
+    getAllUsers,
+    getAllFriends,
+    allUser,
+    allFriend,
+    isUserLoading,
+    error,
+    setSearchedUser
+  } = useChatStore();
+
+  const handleSubmit = (e)=>{
+    console.log("i am in handle submit");
+    
+    e.preventDefault();
+    if(filter === "all"){
+        const matches = allUser.filter(user => user.name.includes(userSearch));
+        setSearchedUser(matches,filter);
+    }
+    else{//filter is friends
+        const matches = allFriend.filter(user => user.name.includes(userSearch));
+        setSearchedUser(matches,filter);
+    }
+    setUserSearch("");
+
+  }
+
+  useEffect(() => {
+    const func = async()=>{
+        try {
+            filter === "all" ? await getAllUsers() :
+            await getAllFriends();
+        } catch (error) {
+            console.log(error);
+        }
+    };func();
+  }, [filter]);
 
   return (
     <aside
       className="
-      w-95
-      min-w-95
-      h-screen
-      bg-[#0b0b0b]
-      border-r border-white/5
-      flex flex-col
-      relative
-      overflow-hidden
-    "
+        w-95
+        min-w-95
+        h-screen
+        bg-[#0b0b0b]
+        border-r border-white/5
+        flex flex-col
+        relative
+        overflow-hidden
+      "
     >
       {/* Ambient background glow */}
       <div className="absolute -top-32 -left-20 w-80 h-80 bg-red-500/10 blur-[130px] rounded-full pointer-events-none" />
@@ -30,16 +68,16 @@ const Sidebar = () => {
       <div className="relative p-5">
         <div
           className="
-          relative
-          rounded-4xl
-          bg-linear-to-br
-          from-[#181818]
-          to-[#101010]
-          p-5
-          border border-white/5
-          shadow-[0_20px_40px_rgba(0,0,0,0.5)]
-          overflow-hidden
-        "
+            relative
+            rounded-4xl
+            bg-linear-to-br
+            from-[#181818]
+            to-[#101010]
+            p-5
+            border border-white/5
+            shadow-[0_20px_40px_rgba(0,0,0,0.5)]
+            overflow-hidden
+          "
         >
           {/* Profile glow */}
           <div className="absolute -top-12 -right-12 w-40 h-40 bg-red-500/20 blur-[80px] rounded-full pointer-events-none" />
@@ -48,28 +86,28 @@ const Sidebar = () => {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <img
-                  src={user?.profilePic}
+                  src={user?.profilepic_url}
                   alt=""
                   className="
-                  w-16
-                  h-16
-                  rounded-full
-                  object-cover
-                  border-2 border-red-500/20
-                "
+                    w-16
+                    h-16
+                    rounded-full
+                    object-cover
+                    border-2 border-red-500/20
+                  "
                 />
 
                 <div
                   className="
-                  absolute
-                  bottom-1
-                  right-1
-                  w-3
-                  h-3
-                  bg-green-500
-                  rounded-full
-                  border-2 border-[#181818]
-                "
+                    absolute
+                    bottom-1
+                    right-1
+                    w-3
+                    h-3
+                    bg-green-500
+                    rounded-full
+                    border-2 border-[#181818]
+                  "
                 />
               </div>
 
@@ -86,18 +124,18 @@ const Sidebar = () => {
 
             <button
               className="
-              w-12
-              h-12
-              rounded-full
-              bg-white/5
-              flex
-              items-center
-              justify-center
-              transition-all
-              duration-300
-              hover:bg-red-500/10
-              hover:shadow-[0_0_25px_rgba(239,68,68,0.4)]
-            "
+                w-12
+                h-12
+                rounded-full
+                bg-white/5
+                flex
+                items-center
+                justify-center
+                transition-all
+                duration-300
+                hover:bg-red-500/10
+                hover:shadow-[0_0_25px_rgba(239,68,68,0.4)]
+              "
             >
               <Pencil size={18} className="text-red-400" />
             </button>
@@ -108,33 +146,38 @@ const Sidebar = () => {
             <Search
               size={20}
               className="
-              absolute
-              left-5
-              top-1/2
-              -translate-y-1/2
-              text-zinc-500
-            "
+                absolute
+                left-5
+                top-1/2
+                -translate-y-1/2
+                text-zinc-500
+              "
             />
-
+            <form onSubmit={handleSubmit}>
             <input
               type="text"
               placeholder="Search users..."
+              value={userSearch}
+              onChange={(e)=>
+                setUserSearch(e.target.value)
+              }
               className="
-              w-full
-              h-14
-              rounded-full
-              bg-[#141414]
-              pl-14
-              pr-5
-              text-white
-              placeholder:text-zinc-500
-              outline-none
-              border border-white/5
-              focus:border-red-500/30
-              focus:shadow-[0_0_20px_rgba(239,68,68,0.15)]
-              transition-all
-            "
+                w-full
+                h-14
+                rounded-full
+                bg-[#141414]
+                pl-14
+                pr-5
+                text-white
+                placeholder:text-zinc-500
+                outline-none
+                border border-white/5
+                focus:border-red-500/30
+                focus:shadow-[0_0_20px_rgba(239,68,68,0.15)]
+                transition-all
+              "
             />
+            </form>
           </div>
 
           {/* Filter */}
@@ -173,16 +216,51 @@ const Sidebar = () => {
       {/* User List */}
       <div
         className="
-        flex-1
-        overflow-y-auto
-        px-3
-        pb-5
-        no-scrollbar
-      "
+          flex-1
+          overflow-y-auto
+          px-3
+          pb-5
+          no-scrollbar
+        "
       >
-        {users.map((user, index) => (
-          <UserCard key={index} />
-        ))}
+        {isUserLoading ? (
+          <div className="flex flex-col items-center justify-center h-full gap-5">
+            <div className="relative">
+              {/* Glow */}
+              <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full scale-150" />
+
+              {/* Spinner */}
+              <div
+                className="
+                  relative
+                  w-14
+                  h-14
+                  rounded-full
+                  border-4
+                  border-zinc-800
+                  border-t-red-500
+                  animate-spin
+                "
+              />
+            </div>
+
+            <p className="text-zinc-400 text-sm tracking-wide">
+              Loading users...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-red-400">
+              Failed to load users
+            </p>
+          </div>
+        ) : (
+          filter ==="all" ? allUser.map((user) => (
+            <UserCard key={user.id} user={user}/>
+          )) : allFriend.map((user) => (
+            <UserCard key={user.id} user={user}/>
+          ))
+        )}
       </div>
     </aside>
   );

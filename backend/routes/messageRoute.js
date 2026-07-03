@@ -1,12 +1,11 @@
 import express from "express"
-import {getAllUsers,getAllFriends,getUser,getMessagesById,sendMessage,sendFriendRequest,handleFriendRequest} from "../controllers/messageController.js"
+import {getAllUsers,getAllFriends,getMessagesById,sendMessage,sendFriendRequest,handleFriendRequest} from "../controllers/messageController.js"
 import authMiddleware from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 router.use(authMiddleware)//all routes are protected and user must be logged in to access them
 
 router.get("/getAllUsers",getAllUsers)//when to load all user
-router.get("/getUser",getUser)//when you search by name on ui
 router.get("/getAllFriends",getAllFriends)//to get only friends
 router.post("/friendRequest/:id",sendFriendRequest)//when both user are not friend then send the request
 router.patch("/handleFriendRequest/:id",handleFriendRequest)//when request is sent and want to accept decline block

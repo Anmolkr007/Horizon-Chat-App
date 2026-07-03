@@ -45,11 +45,7 @@ const App = () => {
             <ChatPage />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<EmptyConversationPage />} />
-        {/* <Route path=":userId" element={<ConversationPage />} />
-        <Route path="profile" element={<ProfilePage />} /> */}
-      </Route>
+      />
 
       <Route path = "/login" element = {
         <RedirectedRoute>

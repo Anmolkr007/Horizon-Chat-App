@@ -18,7 +18,7 @@ export const getMessagesById = async (req, res) => {
         if (isNaN(receiverId))
             return res.status(400).json({ success: false, message: "Invalid user ID" });
         //check if both are friend or not
-        const friendship = await sql`
+        const relationship = await sql`
         SELECT *
         FROM friendRequests
         WHERE
@@ -51,19 +51,21 @@ export const getMessagesById = async (req, res) => {
         });
         }
         else if (relationship[0].status === 'pending') {
+            let s = "";
+            relationship[0].sender_id == receiverId ? s="request_received" : s="request_sent";
         return res.status(200).json({
             success: true,
             messages: "request is sent, check who is sender",
-            relationshipStatus: "pending",
-            requestSender: relationship[0].sender_id
+            relationshipStatus: s
         });
         }
         else if (relationship[0].status === 'blocked') {
-        return res.status(403).json({
+            let s = "";
+            relationship[0].blocked_by  ==  receiverId ? s="blocked_by_user" : s="blocked_by_me";
+        return res.status(200).json({
             success: false,
             message: "User is blocked",
-            relationshipStatus: "blocked",
-            blockedBy: relationship[0].blocked_by,
+            relationshipStatus:s
         });
         }
         //if you are here means both are friend and status is accepted
@@ -76,31 +78,14 @@ export const getMessagesById = async (req, res) => {
                 (sender_id = ${receiverId} AND receiver_id = ${senderId})
                 ORDER BY created_at ASC`;
 
-        return res.status(200).json({ success: true, message: "messages fetched successfully", messages: result });
+        return res.status(200).json({ success: true, message: "messages fetched successfully",relationshipStatus: "accepted", messages: result });
 
     } catch (error) {
         console.log("error in getMessagesById:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
-export const getUser = async (req, res) => {
-    try {
-        let { user } = req.body;
-        if (!user) return res.status(400).json({ success: false, message: "field required" });
-        user = user.toLowerCase();
-        const result = await sql`
-                                SELECT * 
-                                FROM users 
-                                WHERE name ILIKE ${'%' + user + '%'}
-                                `;
 
-        if (result.length === 0) return res.status(400).json({ success: false, message: "user not found" })
-        return res.status(200).json({ success: true, message: "user fetched successfully", users: result })
-    } catch (error) {
-        console.log("error in getUser:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
-    }
-}
 export const getAllFriends = async (req, res) => {
     try {
         const { id } = req.user;
