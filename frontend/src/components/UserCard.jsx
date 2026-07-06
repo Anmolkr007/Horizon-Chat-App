@@ -1,7 +1,7 @@
 import { useChatStore } from "../store/chatStore.js";
 
 
-const UserCard = ({user}) => {
+const UserCard = ({user,online}) => {
   const {getUserById} = useChatStore();
   const handleClick = async()=>{
     try {
@@ -54,16 +54,17 @@ const UserCard = ({user}) => {
           />
 
           <div
-            className="
-            absolute
-            bottom-0
-            right-0
-            w-3
-            h-3
-            bg-green-500
-            rounded-full
-            border-2 border-[#0b0b0b]
-          "
+            className={`
+              absolute
+              bottom-0
+              right-0
+              w-3
+              h-3
+              rounded-full
+              border-2
+              border-[#0b0b0b]
+              ${online ? "bg-green-500" : "bg-red-500"}
+            `}
           />
         </div>
 

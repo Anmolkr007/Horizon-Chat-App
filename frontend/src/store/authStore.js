@@ -1,6 +1,9 @@
 import {create} from "zustand"
 import axios from "axios"
-const API_URL = "http://localhost:3000/api/auth"
+import toast from "react-hot-toast"
+import {io} from "socket.io-client"
+
+const API_URL = "http://localhost:3000"
 axios.defaults.withCredentials = true;
 export const useAuthStore = create((set,get) => ({
     user: null,
@@ -9,10 +12,12 @@ export const useAuthStore = create((set,get) => ({
     isLoading: false,
     isAuthenticated: false,
     isCheckingAuth: true,
+    socket: null,
+    onlineUsers: [],
     resetPassword: async (newPassword, resetPasswordToken)=>{
         try {
             set({isLoading:true,error:null})
-            const response = await axios.post(`${API_URL}/resetPassword`,{newPassword,resetPasswordToken})
+            const response = await axios.post(`${API_URL}/api/auth/resetPassword`,{newPassword,resetPasswordToken})
             set({isLoading:false})
         } catch (error) {
             console.log(error);
@@ -24,7 +29,7 @@ export const useAuthStore = create((set,get) => ({
     forgotPassword: async(email)=>{
         set({isLoading:true,error:null});
         try {
-            await axios.post(`${API_URL}/forgotPassword`,{email})
+            await axios.post(`${API_URL}/api/auth/forgotPassword`,{email})
             set({isLoading:false,error:null})
         } catch (error) {
             console.log(error);
@@ -35,17 +40,19 @@ export const useAuthStore = create((set,get) => ({
     signup: async (name, email, password) => {
         set({isLoading: true, error: null});
         try {
-            const response = await axios.post(`${API_URL}/signup`, { name, email, password });
+            const response = await axios.post(`${API_URL}/api/auth/signup`, { name, email, password });
             set({ isLoading: false });
+            toast.success("Signup successful! Please check your email for verification.");
         } catch (error) {
             set({ isLoading: false, error: error.response.data.message });
+            toast.error(error.response.data?.message || "Signup failed. Please try again.");
             throw error;
         }
     },
     verifyEmail: async(token)=>{
         try {
             set({isLoading:true,error:null});
-            const response = await axios.post(`${API_URL}/verifyEmail`,{verificationToken:token});
+            const response = await axios.post(`${API_URL}/api/auth/verifyEmail`,{verificationToken:token});
             set({isLoading:false,error:null,})
         } catch (error) {
             console.log("error in verifyEmail:",error);
@@ -56,14 +63,14 @@ export const useAuthStore = create((set,get) => ({
     login: async (email,password)=>{
         set({isLoading:true,error:null});
         try {
-            const response = await axios.post(`${API_URL}/login`,{email,password});
+            const response = await axios.post(`${API_URL}/api/auth/login`,{email,password});
             set({
                 user:response.data.user,
                 accessToken:response.data.accessToken,
                 isAuthenticated:true,
                 isLoading:false,
-                error:null,
-            })
+            });
+            get().connectSocket();
         }
         catch (error) {
             console.log("Error in login ",error);
@@ -79,7 +86,7 @@ export const useAuthStore = create((set,get) => ({
     },
     checkAuth: async () =>{
         try {
-            const response = await axios.post(`${API_URL}/refreshToken`);
+            const response = await axios.post(`${API_URL}/api/auth/refreshToken`);
             set({
                 error:null,
                 user:response.data.user,
@@ -87,7 +94,7 @@ export const useAuthStore = create((set,get) => ({
                 isAuthenticated:true,
                 isCheckingAuth:false,
             })
-            
+            get().connectSocket();
         } catch (error) {
             console.log("error in checkAuth",error);
             set({
@@ -97,6 +104,7 @@ export const useAuthStore = create((set,get) => ({
                 isAuthenticated:false,
                 isCheckingAuth:false,
             })
+            get().disconnectSocket();
         }
     },
     logout: async ()=>{
@@ -105,14 +113,15 @@ export const useAuthStore = create((set,get) => ({
         });
         try {
             const token = get().accessToken;
-            await axios.post(`${API_URL}/logout`,{},{headers: {Authorization: `Bearer ${token}`}});
+            await axios.post(`${API_URL}/api/auth/logout`,{},{headers: {Authorization: `Bearer ${token}`}});
             set({
                 user:null,
                 accessToken:null,
                 isAuthenticated: false,
-                error: null,
                 isLoading: false,
+                onlineUsers: [],
             })
+            get().disconnectSocket();
         } catch (error) {
             console.log("axios logout error",error)
             set({
@@ -120,6 +129,27 @@ export const useAuthStore = create((set,get) => ({
                 isLoading: false,
             })
             throw error;
+        }
+    },
+    connectSocket: () => {
+            const {isAuthenticated} = get();
+            if(!isAuthenticated || get().socket?.connected) return;
+            const socket = io(API_URL, {
+                auth: {
+                    token: get().accessToken
+                }
+            });
+            socket.connect();
+            set({ socket });
+            socket.on("getOnlineUsers",(userIds)=>{
+                set({onlineUsers:userIds})
+            });
+        
+    },
+    disconnectSocket: () => {
+        if(get().socket?.connected){
+            get().socket.disconnect();
+            set({ socket: null });
         }
     }
 }))

@@ -1,4 +1,8 @@
 import { sql } from "../config/DB.js"
+import { v4 as uuid } from "uuid";
+import cloudinary from "../config/cloudinary.js";
+import streamifier from "streamifier";
+import { io, getReceiverSocketId } from "../config/socket.js";
 
 
 export const getAllUsers = async (req, res) => {
@@ -56,7 +60,8 @@ export const getMessagesById = async (req, res) => {
         return res.status(200).json({
             success: true,
             messages: "request is sent, check who is sender",
-            relationshipStatus: s
+            relationshipStatus: s,
+            requestSender: relationship[0].sender_id
         });
         }
         else if (relationship[0].status === 'blocked') {
@@ -65,7 +70,8 @@ export const getMessagesById = async (req, res) => {
         return res.status(200).json({
             success: false,
             message: "User is blocked",
-            relationshipStatus:s
+            relationshipStatus:s,
+            BlockedBy: relationship[0].blocked_by
         });
         }
         //if you are here means both are friend and status is accepted
@@ -169,10 +175,125 @@ export const handleFriendRequest = async (req, res) => {
 export const sendMessage = async (req, res) => {
     try {
         const {id:receiverId} = req.params;
-        if (isNaN(requestSenderId))
+        if (isNaN(receiverId))
             return res.status(400).json({ success: false, message: "Invalid user ID" });
         const {id:senderId} = req.user;
-        const {message,messageType} = req.body;
+        //check if both are friend or not
+        const relationship = await sql`
+        SELECT *
+        FROM friendRequests
+        WHERE
+            (
+                sender_id = ${senderId}
+                AND receiver_id = ${receiverId}
+            )
+            OR
+            (
+                sender_id = ${receiverId}
+                AND receiver_id = ${senderId}
+            )
+        `;
+        if (relationship.length === 0 || relationship[0].status !== "accepted") {
+            return res.status(403).json({
+                success: false,
+                message: "You are not friends with this user"
+            });
+        }
+        const  { message } = req.body;
+        let message_type = "text";
+        let content = message;
+        const file = req.file;
+        if (!message && !file) {
+            return res.status(400).json({
+            success: false,
+            message: "Message or file is required",
+            });
+        }
+
+// Check if the receiver exists
+    const receiver = await sql`
+      SELECT id
+      FROM users
+      WHERE id = ${receiverId};
+    `;
+
+    if (receiver.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Receiver not found",
+      });
+    }
+
+
+        if (file) {
+      const uniqueFileName =
+        `${uuid()}-${file.originalname.split(".")[0]}`.replace(/\s+/g, "_");
+
+      const uploadResult = await new Promise((resolve, reject) => {
+
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "chatApp",
+            resource_type: "auto",
+            public_id: uniqueFileName,
+          },
+
+          (error, result) => {
+
+            if (error) {
+              return reject(error);
+            }
+
+            resolve(result);
+
+          }
+        );
+
+        streamifier
+          .createReadStream(file.buffer)
+          .pipe(uploadStream);
+
+      });
+
+
+        content = uploadResult.secure_url;
+
+        if (uploadResult.resource_type === "image") {
+            if (uploadResult.format === "pdf") {
+          message_type = "pdf";
+        }
+        else message_type = "image";
+        
+      }
+
+      else if (uploadResult.resource_type === "video") {
+        message_type = "video";
+      }
+
+      else if (uploadResult.resource_type === "raw") {
+
+        
+
+        
+          message_type = "file";
+        
+
+      }
+
+    }
+        
+        const result = await sql`
+        INSERT INTO messages (sender_id, receiver_id, message, message_type, created_at)
+        VALUES (${senderId}, ${receiverId}, ${content}, ${message_type}, NOW())
+        RETURNING *;
+        `;
+        //todo:socket io emit message to receiver if he is online
+        const receiverSocketId = getReceiverSocketId(receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("newMessage", result[0]);
+        }
+
+        return res.status(201).json({ success: true, message: "Message sent successfully", sentMessage: result[0] });
 
     } catch (error) {
         console.log("error in sendMessage:", error);

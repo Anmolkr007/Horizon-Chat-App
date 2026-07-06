@@ -1,5 +1,5 @@
-import express from 'express';
 import "dotenv/config";
+import express from "express";
 import authRoutes from "./routes/authRoute.js";
 import messageRoutes from "./routes/messageRoute.js"
 import cors from "cors";
@@ -10,16 +10,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { log } from 'console';
 import {arcjetProtection} from "./middlewares/arcjetMiddleware.js"
-
+import {app,server} from "./config/socket.js"
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
+
 
 
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CLIENT_URL,
   credentials: true
 }));
 
@@ -43,7 +43,7 @@ async function initDB() {
   try {
     await createTables();
     console.log("DB Connected");
-    app.listen(process.env.PORT,()=>{
+    server.listen(process.env.PORT,()=>{
     console.log(`server is running on port ${process.env.PORT}`);
     });
   } catch (err) {

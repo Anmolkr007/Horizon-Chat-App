@@ -5,10 +5,11 @@ import { useChatStore } from "../store/chatStore.js";
 import UserCard from "./UserCard.jsx";
 
 const Sidebar = () => {
-  const { user } = useAuthStore();
+  const { user ,onlineUsers} = useAuthStore();
   const [filter, setFilter] = useState("all");
   const [userSearch, setUserSearch] = useState("");
   console.log(userSearch);
+  console.log("onlineUsers in sidebar:", onlineUsers);
   
 
   const {
@@ -47,6 +48,22 @@ const Sidebar = () => {
         }
     };func();
   }, [filter]);
+
+  const onlineUserSet = new Set(
+  onlineUsers.map(Number)
+);
+
+const usersToRender =
+  filter === "all" ? allUser : allFriend;
+
+const sortedUsers = [...usersToRender].sort((a, b) => {
+  const aOnline = onlineUserSet.has(a.id);
+  const bOnline = onlineUserSet.has(b.id);
+
+  if (aOnline === bOnline) return 0;
+
+  return aOnline ? -1 : 1;
+});
 
   return (
     <aside
@@ -255,11 +272,13 @@ const Sidebar = () => {
             </p>
           </div>
         ) : (
-          filter ==="all" ? allUser.map((user) => (
-            <UserCard key={user.id} user={user}/>
-          )) : allFriend.map((user) => (
-            <UserCard key={user.id} user={user}/>
-          ))
+          sortedUsers.map((user) => (
+      <UserCard
+      key={user.id}
+      user={user}
+      online={onlineUserSet.has(user.id)}
+      />
+      ))
         )}
       </div>
     </aside>

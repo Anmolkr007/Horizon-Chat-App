@@ -15,6 +15,7 @@ import { useEffect } from 'react'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import RedirectedRoute from './components/RedirectedRoute.jsx'
 import EmptyConversationPage from './pages/EmptyConversationPage.jsx'
+import { Toaster } from 'react-hot-toast'
 const App = () => {
   const {checkAuth,isAuthenticated,isCheckingAuth} = useAuthStore();
   useEffect(()=>{
@@ -36,6 +37,7 @@ const App = () => {
 
 
   return (
+    <div>
     <Routes>
 
       <Route
@@ -93,6 +95,8 @@ const App = () => {
         <div>404 page not found</div>
       } />
     </Routes>
+    <Toaster/>
+    </div>
   )
 }
 
