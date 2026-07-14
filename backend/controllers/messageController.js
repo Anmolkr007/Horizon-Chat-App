@@ -5,16 +5,6 @@ import streamifier from "streamifier";
 import { io, getReceiverSocketId } from "../config/socket.js";
 
 
-export const getAllUsers = async (req, res) => {
-    try {
-        const loggedInUser = req.user?.id
-        const result = await sql`select id,name,profilepic_url,bio from users where id != ${loggedInUser} and isVerified = true`;
-        return res.status(200).json({ success: true, message: "succeccfully all user fetched", users: result });
-    } catch (error) {
-        console.log("error in getAllUsers:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
-    }
-}
 export const getMessagesById = async (req, res) => {
     try {
         const senderId = req.user.id;
@@ -59,7 +49,7 @@ export const getMessagesById = async (req, res) => {
             relationship[0].sender_id == receiverId ? s="request_received" : s="request_sent";
         return res.status(200).json({
             success: true,
-            messages: "request is sent, check who is sender",
+            message: "request is sent, check who is sender",
             relationshipStatus: s,
             requestSender: relationship[0].sender_id
         });
@@ -83,11 +73,25 @@ export const getMessagesById = async (req, res) => {
                     OR
                 (sender_id = ${receiverId} AND receiver_id = ${senderId})
                 ORDER BY created_at ASC`;
+        //update all messages from receiver to sender as read
+        const updated = await sql`UPDATE messages
+                SET is_read = true
+                WHERE sender_id = ${receiverId} AND receiver_id = ${senderId} AND is_read = false RETURNING id;`;
 
         return res.status(200).json({ success: true, message: "messages fetched successfully",relationshipStatus: "accepted", messages: result });
 
     } catch (error) {
         console.log("error in getMessagesById:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+}
+export const getAllUsers = async (req, res) => {
+    try {
+        const loggedInUser = req.user?.id
+        const result = await sql`select id,name,profilepic_url,bio from users where id != ${loggedInUser} and isVerified = true`;
+        return res.status(200).json({ success: true, message: "succeccfully all user fetched", users: result });
+    } catch (error) {
+        console.log("error in getAllUsers:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
@@ -132,15 +136,18 @@ export const sendFriendRequest = async (req, res) => {
             )
         `
         if(result.length !== 0){
-            if(result[0].sender_id == senderId)return res.status(400).json({success:false,message:"request already sent"});
-            else return res.status(400).json({success:false,message:"you already got request"});
+            if(result[0].sender_id == senderId)return res.status(400).json({success:false,message:"request already sent",relationshipStatus: "request_sent"});
+            else return res.status(400).json({success:false,message:"you already got request",relationshipStatus: "request_received"});
         }
 
         result = await sql`
         INSERT INTO friendRequests (sender_id, receiver_id, status, created_at)
-        VALUES (${senderId}, ${receiverId}, 'pending', NOW())
+        VALUES (${senderId}, ${receiverId}, 'pending', NOW()) returning *
         `;
-        res.status(201).json({ success: true, message: "Friend request sent" });
+        res.status(201).json({ success: true,
+            message: "Friend request sent" ,
+            relationshipStatus: "request_sent",
+        });
     } catch (error) {
         console.log("error in sendFriendRequest:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
@@ -153,7 +160,7 @@ export const handleFriendRequest = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid user ID" });
         const receiverId = req.user.id; 
         const {status:newStatus} = req.body;
-        const allowedStatuses = ["pending", "accepted", "declined","blocked"];
+        const allowedStatuses = ["pending", "accepted", "declined","blocked","unblocked"];
 
         if (!allowedStatuses.includes(newStatus)) {
         return res.status(400).json({
@@ -161,12 +168,58 @@ export const handleFriendRequest = async (req, res) => {
             message: "Invalid status value"
         });
         }
-        await sql`
-        update friendRequests
-        set status = ${newStatus}
-        where sender_id = ${requestSenderId} and receiver_id = ${receiverId};
-        `
-        return res.status(200).json({success:true,message:`Friend request ${newStatus}`})
+        //first check if the request exists
+        const request = await sql`
+        SELECT *
+        FROM friendRequests
+        WHERE ( sender_id = ${requestSenderId} AND receiver_id = ${receiverId} ) or ( sender_id = ${receiverId} AND receiver_id = ${requestSenderId} )
+        `;
+        if (request.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Friend request not found"
+            });
+        }
+
+                if( request[0].status=="pending" && request[0].sender_id !== receiverId ){
+                    if(newStatus === "accepted" || newStatus === "declined"){
+                        await sql`
+                        UPDATE friendRequests
+                        SET status = ${newStatus}
+                        WHERE sender_id = ${requestSenderId} AND receiver_id = ${receiverId}
+                        `;
+                        return res.status(200).json({
+                            success: true,
+                            message: `Friend request ${newStatus}`,
+                            relationshipStatus: newStatus === "accepted" ? "accepted" : "none"
+                        });
+                    }
+                }
+                if(newStatus === "blocked"){
+                    await sql`
+                    UPDATE friendRequests
+                    SET status = 'blocked', blocked_by = ${receiverId}
+                    WHERE ( sender_id = ${requestSenderId} AND receiver_id = ${receiverId} ) or ( sender_id = ${receiverId} AND receiver_id = ${requestSenderId} )
+                    `;
+                    return res.status(200).json({
+                        success: true,
+                        message: "User blocked",
+                        relationshipStatus: "blocked_by_me",
+                        blockedBy: receiverId
+                    });
+                }
+                if(newStatus === "unblocked"){
+                    await sql`
+                    DELETE FROM friendRequests
+                    WHERE ( sender_id = ${requestSenderId} AND receiver_id = ${receiverId} ) or ( sender_id = ${receiverId} AND receiver_id = ${requestSenderId} )
+                    `;
+                    return res.status(200).json({
+                        success: true,
+                        message: "User unblocked",
+                        relationshipStatus: "none"
+                    });
+                }
+
     } catch (error) {
         console.log("error in handleFriendRequest:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
@@ -291,6 +344,7 @@ export const sendMessage = async (req, res) => {
         const receiverSocketId = getReceiverSocketId(receiverId);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("newMessage", result[0]);
+            io.to(receiverSocketId).emit("newNotification", senderId);
         }
 
         return res.status(201).json({ success: true, message: "Message sent successfully", sentMessage: result[0] });
@@ -300,3 +354,48 @@ export const sendMessage = async (req, res) => {
         res.status(500).json({ success: false, message: "Internal server error" });
     }
  }
+export const getUnreadMessagesCount = async (req, res) => {
+    try {
+        const { id: myId } = req.user;
+        const unreadMessages = await sql`
+      SELECT
+        sender_id,
+        COUNT(*)::int AS count
+      FROM messages
+      WHERE receiver_id = ${myId}
+      AND is_read = FALSE
+      GROUP BY sender_id
+    `;
+        res.status(200).json({ success: true,unreadMessages });
+    }
+    catch (error) {
+        console.log("error in getUnreadMessagesCount:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+}
+export const cancelRequest = async (req, res) => {
+    try {
+        const { id: receiverId } = req.params;
+        if (isNaN(receiverId))
+            return res.status(400).json({ success: false, message: "Invalid user ID" });
+        const senderId = req.user.id;
+        //check if the request exists
+        const request = await sql`
+        SELECT *
+        FROM friendRequests
+        WHERE sender_id = ${senderId} AND receiver_id = ${receiverId} AND status = 'pending'
+        `;
+        if (!request.length) {
+            return res.status(404).json({ success: false, message: "Friend request not found" });
+        }
+        //delete the request
+        await sql`
+        DELETE FROM friendRequests
+        WHERE sender_id = ${senderId} AND receiver_id = ${receiverId} AND status = 'pending'
+        `;
+        res.status(200).json({ success: true, message: "Friend request cancelled", relationshipStatus: "none" });
+    } catch (error) {
+        console.log("error in cancelRequest:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};

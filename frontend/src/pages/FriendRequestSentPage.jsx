@@ -1,6 +1,14 @@
 import { Clock3, X } from "lucide-react";
-
+import { useChatStore } from "../store/chatStore.js";
 const FriendRequestSentPage = ({ user }) => {
+  const { deleteRequest, requestLoading } = useChatStore();
+  const handleClick = ()=>{
+    try{
+      deleteRequest();
+    } catch (error) {
+      console.error("Error occurred while deleting friend request:", error);
+    }
+  }
   return (
     <div className="relative h-full flex items-center justify-center overflow-hidden bg-[#090909]">
 
@@ -63,6 +71,8 @@ const FriendRequestSentPage = ({ user }) => {
 
           {/* Button */}
           <button
+            disabled={requestLoading}
+            onClick={handleClick}
             className="
               mt-12
               w-full

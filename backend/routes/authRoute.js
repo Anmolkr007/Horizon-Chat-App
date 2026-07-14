@@ -1,6 +1,7 @@
 import express from "express";
 import { login, signup,logout,verifyEmail,refreshToken,forgotPassword,resetPassword,updateProfile} from "../controllers/authController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
+import upload from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -12,5 +13,5 @@ router.post("/verifyEmail",verifyEmail);
 router.post("/forgotPassword",forgotPassword);
 router.post("/resetPassword",resetPassword);
 
-router.post("/updateProfile",authMiddleware,updateProfile);
+router.post("/updateProfile",authMiddleware,upload.single("file"),updateProfile);
 export default router;

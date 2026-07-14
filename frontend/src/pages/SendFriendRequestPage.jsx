@@ -1,6 +1,18 @@
 import { UserPlus, Shield } from "lucide-react";
+import { useChatStore } from "../store/chatStore.js";
+import {useNavigate} from "react-router"
 
 const SendFriendRequestPage = ({ user }) => {
+  const { sendFriendRequest, requestLoading } = useChatStore();
+  const navigate = useNavigate();
+  const handleClick = async () => {
+    try {console.log("Sending friend request to user:", user);
+      await sendFriendRequest();
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+    }
+  };
+
   return (
     <div className="relative h-full flex items-center justify-center overflow-hidden bg-[#090909]">
 
@@ -64,6 +76,8 @@ const SendFriendRequestPage = ({ user }) => {
 
           {/* Button */}
           <button
+            disabled={requestLoading}
+            onClick={handleClick}
             className="
               mt-12
               w-full

@@ -49,6 +49,9 @@ const ChatContainer = ({ user }) => {
     };
 }, [selectedUser?.id, selectedUser?.relationshipStatus]);
 
+console.log("messages:", messages);
+console.log("isArray:", Array.isArray(messages));
+
   return (
     <div className="h-full flex flex-col bg-[#090909] relative overflow-hidden">
       {/* Ambient Glow */}

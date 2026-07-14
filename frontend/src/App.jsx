@@ -16,6 +16,9 @@ import ProtectedRoute from './components/ProtectedRoute.jsx'
 import RedirectedRoute from './components/RedirectedRoute.jsx'
 import EmptyConversationPage from './pages/EmptyConversationPage.jsx'
 import { Toaster } from 'react-hot-toast'
+import FriendRequestSentPage from './pages/FriendRequestSentPage.jsx'
+import SelectedUserProfile from './components/SelectedUserProfile.jsx'
+import UserProfile from './components/UserProfile.jsx'
 const App = () => {
   const {checkAuth,isAuthenticated,isCheckingAuth} = useAuthStore();
   useEffect(()=>{
@@ -37,7 +40,7 @@ const App = () => {
 
 
   return (
-    <div>
+    <div className="h-screen bg-[#090909]">
     <Routes>
 
       <Route
@@ -90,6 +93,16 @@ const App = () => {
         <RedirectedRoute>
           <EmailVerification/>
         </RedirectedRoute>
+      }/>
+      <Route path = "/selectedUserProfile" element = {
+        <ProtectedRoute>
+          <SelectedUserProfile/>
+        </ProtectedRoute>
+      }/>
+      <Route path = "/userProfile" element = {
+        <ProtectedRoute>
+          <UserProfile/>
+        </ProtectedRoute>
       }/>
       <Route path = "*" element = {
         <div>404 page not found</div>

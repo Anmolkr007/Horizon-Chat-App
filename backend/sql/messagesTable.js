@@ -14,7 +14,7 @@ export const messagesTable = async () => {
 
         message_type TEXT DEFAULT 'text',
 
-        is_read BOOLEAN DEFAULT FALSE,
+        is_read BOOLEAN DEFAULT false,
 
         created_at TIMESTAMPTZ DEFAULT NOW()
       );

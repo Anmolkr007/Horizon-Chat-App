@@ -4,8 +4,10 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import validator from "validator";
 import transporter from "../config/nodemailer.js"
-import { log } from "console";
 import cloudinary from "../config/cloudinary.js";
+import { v4 as uuid } from "uuid";
+import streamifier from "streamifier";
+import { io } from "../config/socket.js";
 
 export const verifyEmail = async(req, res) => {
     const {verificationToken} = req.body;
@@ -27,6 +29,7 @@ export const verifyEmail = async(req, res) => {
             verificationTokenExpiresAt = null
             where id = ${user[0].id}
         `;
+        io.emit("newUserRegistered");
         console.log("Email verified for user with email:", user[0].email);
         res.status(200).json({success:true,message:"Email verified successfully, Try logging in now."});
     }
@@ -118,6 +121,8 @@ export const signup = async(req, res) => {
         email = email.trim();
         name = name.trim();
         email = email.toLowerCase();
+        //profilepic
+        const profilePic_url =`https://api.dicebear.com/10.x/initials/svg?seed=${encodeURIComponent(name)}`;
 
         // Email Validation
         if (!validator.isEmail(email)) {
@@ -149,7 +154,9 @@ export const signup = async(req, res) => {
                 //if user exists but not verified,put the verification token in db and hasedpassword and  send verification email again
                 await sql`
                 update users
-                set verificationToken = ${hashedVerificationToken},
+                set name = ${name},
+                profilepic_url = ${profilePic_url},
+                verificationToken = ${hashedVerificationToken},
                 verificationTokenExpiresAt = ${verificationTokenExpiresAt},
                 password = ${hashedPassword}
                 where email = ${email}
@@ -249,11 +256,11 @@ export const signup = async(req, res) => {
 </html>
 `
         }
-        
+        console.log("verificationToken:",verificationToken);
         // Insert new user into database
         await sql`
-        insert into users (email, password, name, verificationToken,verificationTokenExpiresAt)
-        values (${email}, ${hashedPassword}, ${name}, ${hashedVerificationToken}, ${verificationTokenExpiresAt} )
+        insert into users (email, password, name, profilepic_url, verificationToken,verificationTokenExpiresAt)
+        values (${email}, ${hashedPassword}, ${name}, ${profilePic_url}, ${hashedVerificationToken}, ${verificationTokenExpiresAt} )
         `;
         await transporter.sendMail(maileOptions);
 
@@ -291,10 +298,24 @@ export const refreshToken = async(req,res) => {
         });
         res.status(200).json({success:true,message:"Tokens refreshed successfully",accessToken:newAccessToken,user:user[0]});    
     }
-    catch(error){
-        console.log("Error in refreshToken",error);
-        res.status(500).json({success:false,message:"Internal server error"});
+    catch (error) {
+    if (
+        error.name === "TokenExpiredError" ||
+        error.name === "JsonWebTokenError"
+    ) {
+        return res.status(401).json({
+            success: false,
+            message: "Refresh token expired. Please login again."
+        });
     }
+
+    console.log(error);
+
+    return res.status(500).json({
+        success: false,
+        message: "Internal server error"
+    });
+}
 }
 
 export const forgotPassword = async(req, res) => {
@@ -426,14 +447,52 @@ export const resetPassword = async(req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
+    console.log("in updateProfile route")
     //if evrything is null, means no value provided
-    if(!req.body.name && !req.body.bio && !req.body.profilePic)
+    if(!req.body.name && !req.body.bio && !req.file){
+      console.log("logging req.body:",req.body);
       return res.status(400).json({success:"false",message:"No fields provided to update"});
+    }
+      
+    if (req.file && !req.file.mimetype.startsWith("image/")) {
+      return res.status(400).json({
+      message: "Only image files are allowed.",
+    });
+    }
+    const file = req.file;
+    let uploadResult;
+    if (file) {
+          const uniqueFileName =
+            `${uuid()}-${file.originalname.split(".")[0]}`.replace(/\s+/g, "_");
+    
+          uploadResult = await new Promise((resolve, reject) => {
+    
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: "chatApp",
+                resource_type: "auto",
+                public_id: uniqueFileName,
+              },
+    
+              (error, result) => {
+    
+                if (error) {
+                  return reject(error);
+                }
+    
+                resolve(result);
+    
+              }
+            );
+    
+            streamifier
+              .createReadStream(file.buffer)
+              .pipe(uploadStream);
+    
+          });
 
-    let uploadResponse = null;
+    }
 
-    if (req.body.profilePic)
-      uploadResponse = await cloudinary.uploader.upload(req.body.profilePic);
     
 
     const result = await sql`
@@ -441,7 +500,7 @@ export const updateProfile = async (req, res) => {
       SET
         name = COALESCE(${req.body.name}, name),
         bio = COALESCE(${req.body.bio}, bio),
-        profilePic_url = COALESCE(${uploadResponse ? uploadResponse.secure_url : null}, profilePic_url)
+        profilePic_url = COALESCE(${uploadResult ? uploadResult.secure_url : null}, profilePic_url)
       WHERE id = ${req.user.id}
       RETURNING id, name, bio, profilePic_url;
     `;

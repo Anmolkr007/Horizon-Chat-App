@@ -49,6 +49,7 @@ const ChatPage = () => {
 
   // No selected user
   else if (!selectedUser) {
+    {console.log("No selected user, showing EmptyConversationPage")}
     content = <EmptyConversationPage />;
   }
 

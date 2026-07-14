@@ -3,20 +3,25 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/authStore.js";
 import { useChatStore } from "../store/chatStore.js";
 import UserCard from "./UserCard.jsx";
+import { all } from "axios";
+import { useNavigate } from "react-router";
 
 const Sidebar = () => {
+  const navigate = useNavigate();
   const { user ,onlineUsers} = useAuthStore();
   const [filter, setFilter] = useState("all");
   const [userSearch, setUserSearch] = useState("");
   console.log(userSearch);
   console.log("onlineUsers in sidebar:", onlineUsers);
   
-
+  
   const {
     getAllUsers,
     getAllFriends,
     allUser,
     allFriend,
+    displayUser,
+    displayFriend,
     isUserLoading,
     error,
     setSearchedUser
@@ -27,16 +32,18 @@ const Sidebar = () => {
     
     e.preventDefault();
     if(filter === "all"){
-        const matches = allUser.filter(user => user.name.includes(userSearch));
+        const matches = allUser.filter(user => user.name.toLowerCase().includes(userSearch.toLowerCase()));
         setSearchedUser(matches,filter);
     }
     else{//filter is friends
-        const matches = allFriend.filter(user => user.name.includes(userSearch));
+        const matches = allFriend.filter(user => user.name.toLowerCase().includes(userSearch.toLowerCase()));
         setSearchedUser(matches,filter);
     }
     setUserSearch("");
 
   }
+
+  
 
   useEffect(() => {
     const func = async()=>{
@@ -54,7 +61,7 @@ const Sidebar = () => {
 );
 
 const usersToRender =
-  filter === "all" ? allUser : allFriend;
+  filter === "all" ? displayUser : displayFriend;
 
 const sortedUsers = [...usersToRender].sort((a, b) => {
   const aOnline = onlineUserSet.has(a.id);
@@ -140,6 +147,7 @@ const sortedUsers = [...usersToRender].sort((a, b) => {
             </div>
 
             <button
+            onClick={()=>navigate("/userProfile")}
               className="
                 w-12
                 h-12

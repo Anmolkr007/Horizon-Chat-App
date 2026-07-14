@@ -1,6 +1,31 @@
 import { Check, X, ShieldBan } from "lucide-react";
-
+import { useChatStore } from "../store/chatStore.js";
 const IncomingFriendRequestPage = ({ user }) => {
+  const {handleRequest,requestLoading} = useChatStore();
+  const handleAccept = async()=>{
+    try{
+      await handleRequest("accepted");
+    }
+    catch (error) {
+      console.error("Error accepting friend request:", error);
+    }
+  }
+  const handleDecline = async()=>{
+    try{
+      await handleRequest("declined");
+    }
+    catch (error) {
+      console.error("Error declining friend request:", error);
+    }
+  }
+  const handleBlock = async()=>{
+    try{
+      await handleRequest("blocked");
+    }
+    catch (error) {
+      console.error("Error blocking friend request:", error);
+    }
+  }
   return (
     <div className="relative h-full flex items-center justify-center overflow-hidden bg-[#090909]">
 
@@ -71,6 +96,8 @@ const IncomingFriendRequestPage = ({ user }) => {
 
             {/* Accept */}
             <button
+              disabled={requestLoading}
+              onClick={handleAccept}
               className="
                 flex-1
                 h-16
@@ -97,6 +124,8 @@ const IncomingFriendRequestPage = ({ user }) => {
 
             {/* Decline */}
             <button
+              disabled={requestLoading}
+              onClick={handleDecline}
               className="
                 flex-1
                 h-16
@@ -122,6 +151,8 @@ const IncomingFriendRequestPage = ({ user }) => {
 
             {/* Block */}
             <button
+              disabled={requestLoading}
+              onClick={handleBlock}
               className="
                 flex-1
                 h-16

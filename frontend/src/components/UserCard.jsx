@@ -2,9 +2,11 @@ import { useChatStore } from "../store/chatStore.js";
 
 
 const UserCard = ({user,online}) => {
-  const {getUserById} = useChatStore();
+  const {getUserById,notifications,clearNotifications} = useChatStore();
+  const unreadCount = notifications[user.id] || 0;
   const handleClick = async()=>{
     try {
+      clearNotifications(user.id);
       await getUserById(user.id,user.profilepic_url,user.name)
     } catch (error) {
       console.log(error);
@@ -82,17 +84,22 @@ const UserCard = ({user,online}) => {
               {user.name}
             </h3>
 
-            <span className="text-zinc-500 text-xs">
-              10:35 AM
-            </span>
+            
           </div>
 
           <div className="flex justify-between items-center mt-1">
-            <p className="text-zinc-400 truncate">
-              Hi, are you available tomorrow?
-            </p>
+            <p
+  className={`
+    truncate
+    text-sm
+    font-medium
+    ${unreadCount > 0 ? "text-red-400 animate-pulse" : "text-zinc-500"}
+  `}
+>
+  {unreadCount > 0 ? "New Message" : ""}
+</p>
 
-            <div
+            {unreadCount > 0 && <div
               className="
               w-5
               h-5
@@ -106,8 +113,8 @@ const UserCard = ({user,online}) => {
               shadow-[0_0_10px_rgba(239,68,68,0.5)]
             "
             >
-              1
-            </div>
+              {unreadCount > 0 ? unreadCount : ""}
+            </div>}
           </div>
         </div>
       </div>

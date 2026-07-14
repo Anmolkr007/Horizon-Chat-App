@@ -1,6 +1,16 @@
 import { Lock, Unlock } from "lucide-react";
+import { useChatStore } from "../store/chatStore.js";
 
 const BlockedUserPage = ({ user }) => {
+  const {handleRequest,requestLoading} = useChatStore();
+  const handleUnblock = async()=>{
+    try{
+      await handleRequest("unblocked");
+    }
+    catch (error) {
+      console.error("Error unblocking user:", error);
+    }
+  };
   return (
     <div className="relative h-full flex items-center justify-center overflow-hidden bg-[#090909]">
 
@@ -68,6 +78,8 @@ const BlockedUserPage = ({ user }) => {
 
           {/* Button */}
           <button
+            disabled={requestLoading}
+            onClick={handleUnblock} 
             className="
               mt-12
               w-full
