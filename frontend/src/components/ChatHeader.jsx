@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 
 const ChatHeader = ({ user }) => {
   const { onlineUsers } = useAuthStore();
-  const {selectedUser,handleRequest,requestLoading,isTyping} = useChatStore()
+  const {setSelectedUser,handleRequest,requestLoading,isTyping} = useChatStore()
   const navigate = useNavigate();
 
   const isOnline = onlineUsers

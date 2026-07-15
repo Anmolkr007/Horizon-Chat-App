@@ -18,6 +18,11 @@ export const useChatStore = create((set,get) => ({
     notifications:{},
     isNotificationLoading:false,
     requestLoading:false,
+    setSelectedUser: ()=>{
+        set({
+            selectedUser:null,
+        })
+    },
     handleRequest: async (action)=>{
         try{
             const {selectedUser} = get();

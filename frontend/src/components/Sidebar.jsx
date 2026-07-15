@@ -75,15 +75,16 @@ const sortedUsers = [...usersToRender].sort((a, b) => {
   return (
     <aside
       className="
-        w-95
-        min-w-95
-        h-screen
-        bg-[#0b0b0b]
-        border-r border-white/5
-        flex flex-col
-        relative
-        overflow-hidden
-      "
+    w-full
+    md:w-95
+    md:min-w-95
+    h-screen
+    bg-[#0b0b0b]
+    border-r border-white/5
+    flex flex-col
+    relative
+    overflow-hidden
+"
     >
       {/* Ambient background glow */}
       <div className="absolute -top-32 -left-20 w-80 h-80 bg-red-500/10 blur-[130px] rounded-full pointer-events-none" />

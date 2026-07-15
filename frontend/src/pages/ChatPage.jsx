@@ -10,22 +10,17 @@ import IncomingFriendRequestPage from "./IncomingFriendRequestPage.jsx";
 import ChatContainer from "./ChatContainer.jsx";
 
 const ChatPage = () => {
-  const {
-    selectedUser,
-    isMessageLoading,
-  } = useChatStore();
+  const { selectedUser, isMessageLoading } = useChatStore();
 
   let content;
 
-  // Loading state for right side
+  // Loading
   if (isMessageLoading) {
     content = (
       <div className="flex flex-col items-center justify-center h-full gap-5">
         <div className="relative">
-          {/* Red glow */}
           <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full scale-150" />
 
-          {/* Spinner */}
           <div
             className="
               relative
@@ -47,9 +42,8 @@ const ChatPage = () => {
     );
   }
 
-  // No selected user
+  // No chat selected
   else if (!selectedUser) {
-    {console.log("No selected user, showing EmptyConversationPage")}
     content = <EmptyConversationPage />;
   }
 
@@ -57,51 +51,27 @@ const ChatPage = () => {
   else {
     switch (selectedUser.relationshipStatus) {
       case "none":
-        content = (
-          <SendFriendRequestPage
-            user={selectedUser}
-          />
-        );
+        content = <SendFriendRequestPage user={selectedUser} />;
         break;
 
       case "request_sent":
-        content = (
-          <FriendRequestSentPage
-            user={selectedUser}
-          />
-        );
+        content = <FriendRequestSentPage user={selectedUser} />;
         break;
 
       case "request_received":
-        content = (
-          <IncomingFriendRequestPage
-            user={selectedUser}
-          />
-        );
+        content = <IncomingFriendRequestPage user={selectedUser} />;
         break;
 
       case "blocked_by_me":
-        content = (
-          <BlockedUserPage
-            user={selectedUser}
-          />
-        );
+        content = <BlockedUserPage user={selectedUser} />;
         break;
 
       case "blocked_by_user":
-        content = (
-          <BlockedByUserPage
-            user={selectedUser}
-          />
-        );
+        content = <BlockedByUserPage user={selectedUser} />;
         break;
 
       case "accepted":
-        content = (
-          <ChatContainer
-            user={selectedUser}
-          />
-        );
+        content = <ChatContainer user={selectedUser} />;
         break;
 
       default:
@@ -111,20 +81,35 @@ const ChatPage = () => {
 
   return (
     <div className="h-screen bg-black text-white flex overflow-hidden">
-      {/* Left Sidebar */}
+
+      {/* Sidebar */}
       <div
         className={`
-        ${selectedUser ? "hidden" : "block"}
-        md:block
+          ${
+            selectedUser
+              ? "hidden md:block md:w-95 md:min-w-95"
+              : "block w-full md:w-95 md:min-w-95"
+          }
         `}
-        >
+      >
         <Sidebar />
-    </div>
+      </div>
 
       {/* Right Content */}
-      <main className="flex-1 bg-zinc-950 overflow-hidden">
+      <main
+        className={`
+          ${
+            selectedUser
+              ? "block flex-1"
+              : "hidden md:block md:flex-1"
+          }
+          bg-zinc-950
+          overflow-hidden
+        `}
+      >
         {content}
       </main>
+
     </div>
   );
 };
