@@ -78,6 +78,11 @@ export const getMessagesById = async (req, res) => {
                 SET is_read = true
                 WHERE sender_id = ${receiverId} AND receiver_id = ${senderId} AND is_read = false RETURNING id;`;
 
+        const receiverSocketId = getReceiverSocketId(receiverId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("allMessageRead", {readerId:senderId});
+        }
+
         return res.status(200).json({ success: true, message: "messages fetched successfully",relationshipStatus: "accepted", messages: result });
 
     } catch (error) {
@@ -340,7 +345,7 @@ export const sendMessage = async (req, res) => {
         VALUES (${senderId}, ${receiverId}, ${content}, ${message_type}, NOW())
         RETURNING *;
         `;
-        //todo:socket io emit message to receiver if he is online
+        //socket io emit message to receiver if he is online
         const receiverSocketId = getReceiverSocketId(receiverId);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("newMessage", result[0]);

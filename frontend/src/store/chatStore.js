@@ -11,6 +11,7 @@ export const useChatStore = create((set,get) => ({
     messages: [],
     selectedUser: null,
     error: null,
+    isTyping: false,
     isUserLoading: false,
     isMessageLoading:false,
     isUploading:false,
@@ -228,6 +229,15 @@ export const useChatStore = create((set,get) => ({
             throw error;
         }
     },
+    markMessagesRead: (readerId) => {
+    set((state) => ({
+        messages: state.messages.map(msg =>
+            msg.receiver_id == readerId
+                ? { ...msg, is_read: true }
+                : msg
+        )
+    }));
+    },   
     subscribeToMessage : ()=>{
         const {selectedUser} = get();
         if(!selectedUser) return;
@@ -238,11 +248,38 @@ export const useChatStore = create((set,get) => ({
             set((state) => ({
             messages: [...state.messages, newMessage],
             }));
+            socket.emit("messageRead", {
+            messageId: newMessage.id,
+            });
         })
+        socket.on("userTyping", ({ userId }) => {
+
+            const { selectedUser } = useChatStore.getState();
+
+            if (selectedUser?.id !== userId) return;
+
+            useChatStore.setState({
+                isTyping: true,
+            });
+
+        });
+        socket.on("userStoppedTyping", ({ userId }) => {
+
+            const { selectedUser } = useChatStore.getState();
+
+            if (selectedUser?.id !== userId) return;
+
+            useChatStore.setState({
+                isTyping: false,
+            });
+
+        });
     },
     unsubscribeFromMessage : ()=>{
         const socket = useAuthStore.getState().socket;
         if(!socket) return;
         socket.off("newMessage");
+        socket.off("userTyping");
+        socket.off("userStoppedTyping");
     }
 }))

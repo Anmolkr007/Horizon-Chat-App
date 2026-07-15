@@ -214,6 +214,9 @@ export const useAuthStore = create((set,get) => ({
                 const { getAllUsers } = useChatStore.getState();
                 await getAllUsers();
             });
+            socket.on("allMessageRead", ({ readerId }) => {
+            useChatStore.getState().markMessagesRead(readerId);
+            });
 
         
     },

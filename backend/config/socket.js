@@ -1,6 +1,7 @@
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
+import { sql } from "./DB.js";
 import socketMiddleware from "../middlewares/socketMiddleware.js";
 
 const app = express();
@@ -35,5 +36,53 @@ io.on("connection", (socket) => {
     delete userSocketMap[socket.user.id];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
+  socket.on("typing", ({ receiverId }) => {
+
+    const receiverSocketId = getReceiverSocketId(receiverId);
+
+    if (receiverSocketId) {
+        io.to(receiverSocketId).emit("userTyping", {
+            userId: socket.user.id,
+        });
+    }
+
+});
+socket.on("stopTyping", ({ receiverId }) => {
+
+    const receiverSocketId = getReceiverSocketId(receiverId);
+
+    if (receiverSocketId) {
+
+        io.to(receiverSocketId).emit("userStoppedTyping", {
+            userId: socket.user.id,
+        });
+
+    }
+
+});
+  socket.on("messageRead", async ({ messageId }) => {
+    try {
+        const result = await sql`
+            UPDATE messages
+            SET is_read = true
+            WHERE id = ${messageId}
+              AND is_read = false
+            RETURNING sender_id, receiver_id;
+        `;
+
+        if (result.length === 0) return;
+
+        const senderSocketId = getReceiverSocketId(result[0].sender_id);
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("allMessageRead", {
+                readerId: result[0].receiver_id,
+            });
+        }
+
+    } catch (err) {
+        console.error("messageRead error:", err);
+    }
+});
 });
 export { io, app,userSocketMap, server };

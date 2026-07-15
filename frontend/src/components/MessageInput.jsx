@@ -11,6 +11,7 @@ import {
 
 import { useState, useRef, useEffect } from "react";
 import { useChatStore } from "../store/chatStore.js";
+import { useAuthStore } from "../store/authStore.js";
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_RECORDING_TIME = 10 * 60; // 10 minutes
@@ -34,6 +35,28 @@ const MessageInput = () => {
     isUploading,
     selectedUser,
   } = useChatStore();
+  const {socket} = useAuthStore();
+ const typingTimeout = useRef(null);
+
+  const handleChange = (e) => {
+
+    setText(e.target.value);
+
+    socket.emit("typing", {
+        receiverId: selectedUser.id,
+    });
+
+    clearTimeout(typingTimeout.current);
+
+    typingTimeout.current = setTimeout(() => {
+
+        socket.emit("stopTyping", {
+            receiverId: selectedUser.id,
+        });
+
+    }, 1000);
+
+};
 
   useEffect(() => {
     return () => {
@@ -302,9 +325,7 @@ const MessageInput = () => {
                 isUploading ||
                 isRecording
               }
-              onChange={(e) =>
-                setText(e.target.value)
-              }
+              onChange={handleChange}
               placeholder={
                 isRecording
                   ? "Recording..."

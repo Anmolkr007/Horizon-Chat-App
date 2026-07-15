@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 
 const ChatHeader = ({ user }) => {
   const { onlineUsers } = useAuthStore();
-  const {handleRequest,requestLoading} = useChatStore()
+  const {handleRequest,requestLoading,isTyping} = useChatStore()
   const navigate = useNavigate();
 
   const isOnline = onlineUsers
@@ -88,7 +88,7 @@ const ChatHeader = ({ user }) => {
           </h2>
 
           <p className="text-zinc-500 text-sm">
-            {isOnline ? "Online" : "Offline"}
+          {isTyping ? "Typing..." : isOnline ? "Online" : "Offline"}
           </p>
         </div>
       </div>
