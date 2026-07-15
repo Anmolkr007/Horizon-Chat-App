@@ -1,4 +1,4 @@
-import { Video, MoreVertical, Ban } from "lucide-react";
+import { ArrowLeft,Video, MoreVertical, Ban } from "lucide-react";
 import { useAuthStore } from "../store/authStore.js";
 import { useChatStore } from "../store/chatStore.js";
 import { useState, useRef, useEffect } from "react";
@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 
 const ChatHeader = ({ user }) => {
   const { onlineUsers } = useAuthStore();
-  const {handleRequest,requestLoading,isTyping} = useChatStore()
+  const {selectedUser,handleRequest,requestLoading,isTyping} = useChatStore()
   const navigate = useNavigate();
 
   const isOnline = onlineUsers
@@ -53,6 +53,10 @@ const ChatHeader = ({ user }) => {
         z-20
       "
     >
+      <ArrowLeft
+    className="md:hidden cursor-pointer"
+    onClick={() => setSelectedUser(null)}
+    />
       <div className="flex items-center gap-5">
         <div className="relative" onClick={()=>navigate("/SelectedUserProfile")}>
           <img

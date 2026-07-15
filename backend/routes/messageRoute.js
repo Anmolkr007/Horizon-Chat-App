@@ -2,9 +2,11 @@ import express from "express"
 import {getAllUsers,getAllFriends,getMessagesById,sendMessage,sendFriendRequest,getUnreadMessagesCount,handleFriendRequest,cancelRequest} from "../controllers/messageController.js"
 import authMiddleware from "../middlewares/authMiddleware.js";
 import upload from "../middlewares/uploadMiddleware.js";
+import { arcjetProtection } from "../middlewares/arcjetMiddleware.js";
 
 const router = express.Router();
 router.use(authMiddleware)//all routes are protected and user must be logged in to access them
+router.use(arcjetProtection);
 
 router.get("/getUnreadMessagesCount",getUnreadMessagesCount)//to get the count of unread messages for the logged in user
 router.get("/getAllUsers",getAllUsers)//when to load all user

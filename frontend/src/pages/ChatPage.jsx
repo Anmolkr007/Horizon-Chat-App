@@ -112,7 +112,14 @@ const ChatPage = () => {
   return (
     <div className="h-screen bg-black text-white flex overflow-hidden">
       {/* Left Sidebar */}
-      <Sidebar />
+      <div
+        className={`
+        ${selectedUser ? "hidden" : "block"}
+        md:block
+        `}
+        >
+        <Sidebar />
+    </div>
 
       {/* Right Content */}
       <main className="flex-1 bg-zinc-950 overflow-hidden">

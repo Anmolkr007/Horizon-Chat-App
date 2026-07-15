@@ -7,7 +7,7 @@ import {sql} from "./config/DB.js";
 import {createTables} from "./sql/createTables.js"
 import cookieParser from "cookie-parser";
 import path from "path";
-import {arcjetProtection} from "./middlewares/arcjetMiddleware.js"
+// import {arcjetProtection} from "./middlewares/arcjetMiddleware.js"
 import {app,server} from "./config/socket.js"
 
 const __dirname = path.resolve();
@@ -23,7 +23,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(arcjetProtection);
+// app.use(arcjetProtection);
 
 
 app.use("/api/auth",authRoutes);
