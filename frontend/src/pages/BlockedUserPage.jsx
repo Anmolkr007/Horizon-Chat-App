@@ -1,16 +1,21 @@
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, ArrowLeft } from "lucide-react";
 import { useChatStore } from "../store/chatStore.js";
 
 const BlockedUserPage = ({ user }) => {
-  const {handleRequest,requestLoading} = useChatStore();
-  const handleUnblock = async()=>{
-    try{
+  const {
+    handleRequest,
+    requestLoading,
+    setSelectedUser,
+  } = useChatStore();
+
+  const handleUnblock = async () => {
+    try {
       await handleRequest("unblocked");
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error unblocking user:", error);
     }
   };
+
   return (
     <div className="relative h-full flex items-center justify-center overflow-hidden bg-[#090909]">
 
@@ -22,6 +27,7 @@ const BlockedUserPage = ({ user }) => {
         className="
           relative
           w-[580px]
+          max-w-[92vw]
           rounded-[42px]
           border border-white/5
           bg-[#121212]/95
@@ -30,10 +36,25 @@ const BlockedUserPage = ({ user }) => {
           overflow-hidden
         "
       >
+        {/* Mobile Back Button */}
+        <div className="md:hidden absolute top-6 left-6 z-30">
+          <ArrowLeft
+            onClick={() => setSelectedUser(null)}
+            className="
+              w-7
+              h-7
+              text-white
+              cursor-pointer
+              transition
+              hover:text-red-400
+            "
+          />
+        </div>
+
         {/* subtle top glow */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
 
-        <div className="px-12 py-14 text-center">
+        <div className="px-12 pt-16 pb-14 text-center">
 
           {/* Avatar */}
           <div className="relative flex justify-center">
@@ -72,14 +93,15 @@ const BlockedUserPage = ({ user }) => {
             You blocked{" "}
             <span className="text-white font-semibold">
               {user?.name}
-            </span>.
-            Messages, media sharing, voice calls and video calls are currently disabled.
+            </span>
+            . Messages, media sharing, voice calls and video calls are currently
+            disabled.
           </p>
 
           {/* Button */}
           <button
             disabled={requestLoading}
-            onClick={handleUnblock} 
+            onClick={handleUnblock}
             className="
               mt-12
               w-full

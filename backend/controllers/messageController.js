@@ -215,8 +215,9 @@ export const handleFriendRequest = async (req, res) => {
                 }
                 if(newStatus === "unblocked"){
                     await sql`
-                    DELETE FROM friendRequests
-                    WHERE ( sender_id = ${requestSenderId} AND receiver_id = ${receiverId} ) or ( sender_id = ${receiverId} AND receiver_id = ${requestSenderId} )
+                    UPDATE friendRequests
+                    SET status = 'accepted', blocked_by = null
+                    WHERE (( sender_id = ${requestSenderId} AND receiver_id = ${receiverId} ) or ( sender_id = ${receiverId} AND receiver_id = ${requestSenderId} )) AND status = 'blocked'
                     `;
                     return res.status(200).json({
                         success: true,

@@ -1,12 +1,19 @@
-import { UserPlus, Shield } from "lucide-react";
+import { UserPlus, Shield, ArrowLeft } from "lucide-react";
 import { useChatStore } from "../store/chatStore.js";
-import {useNavigate} from "react-router"
+import { useNavigate } from "react-router";
 
 const SendFriendRequestPage = ({ user }) => {
-  const { sendFriendRequest, requestLoading } = useChatStore();
+  const {
+    sendFriendRequest,
+    requestLoading,
+    setSelectedUser,
+  } = useChatStore();
+
   const navigate = useNavigate();
+
   const handleClick = async () => {
-    try {console.log("Sending friend request to user:", user);
+    try {
+      console.log("Sending friend request to user:", user);
       await sendFriendRequest();
     } catch (error) {
       console.error("Error sending friend request:", error);
@@ -24,6 +31,7 @@ const SendFriendRequestPage = ({ user }) => {
         className="
           relative
           w-[580px]
+          max-w-[92vw]
           rounded-[42px]
           border border-white/5
           bg-[#121212]/95
@@ -32,6 +40,35 @@ const SendFriendRequestPage = ({ user }) => {
           overflow-hidden
         "
       >
+        {/* Mobile Back Button */}
+        <button
+          onClick={() => setSelectedUser(null)}
+          className="
+            md:hidden
+            absolute
+            top-5
+            left-5
+            z-20
+            w-11
+            h-11
+            rounded-full
+            bg-white/[0.03]
+            border border-white/5
+            flex
+            items-center
+            justify-center
+            text-zinc-300
+            transition-all
+            duration-300
+            hover:text-white
+            hover:bg-red-500/10
+            hover:border-red-500/20
+            hover:shadow-[0_0_25px_rgba(239,68,68,0.25)]
+          "
+        >
+          <ArrowLeft size={20} />
+        </button>
+
         {/* subtle top glow */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
 

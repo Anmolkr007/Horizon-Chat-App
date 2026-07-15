@@ -1,140 +1,162 @@
 import React, { useRef, useState, useEffect } from "react";
-import { FileText, Download, Play, Pause, Volume2 } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Play,
+  Pause,
+  Volume2,
+} from "lucide-react";
 
-/**
- * Small custom audio player to avoid native black chrome and keep consistent styling.
- */
+/* -------------------------------------------------------------------------- */
+/*                                Audio Player                                */
+/* -------------------------------------------------------------------------- */
+
 const AudioPlayer = ({ src }) => {
   const audioRef = useRef(null);
   const progressRef = useRef(null);
+
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
 
   useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    const onLoaded = () => setDuration(a.duration || 0);
-    const onTime = () => setCurrent(a.currentTime || 0);
-    const onEnded = () => setPlaying(false);
+    const loaded = () => setDuration(audio.duration || 0);
+    const time = () => setCurrent(audio.currentTime || 0);
+    const ended = () => setPlaying(false);
 
-    a.addEventListener("loadedmetadata", onLoaded);
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("ended", onEnded);
+    audio.addEventListener("loadedmetadata", loaded);
+    audio.addEventListener("timeupdate", time);
+    audio.addEventListener("ended", ended);
 
     return () => {
-      a.removeEventListener("loadedmetadata", onLoaded);
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("ended", onEnded);
+      audio.removeEventListener("loadedmetadata", loaded);
+      audio.removeEventListener("timeupdate", time);
+      audio.removeEventListener("ended", ended);
     };
   }, [src]);
 
   useEffect(() => {
-    const a = audioRef.current;
-    if (a) a.volume = volume;
+    if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
   const togglePlay = async () => {
-    const a = audioRef.current;
-    if (!a) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (playing) {
-      a.pause();
+      audio.pause();
       setPlaying(false);
     } else {
       try {
-        await a.play();
+        await audio.play();
         setPlaying(true);
-      } catch {
-        // play blocked or error
-      }
+      } catch {}
     }
   };
 
   const seek = (e) => {
-    const a = audioRef.current;
-    if (!a || !progressRef.current || !duration) return;
+    if (!audioRef.current || !progressRef.current || !duration) return;
+
     const rect = progressRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    a.currentTime = x * duration;
-    setCurrent(a.currentTime);
+
+    const percent = Math.max(
+      0,
+      Math.min(1, (e.clientX - rect.left) / rect.width)
+    );
+
+    audioRef.current.currentTime = percent * duration;
   };
 
-  const format = (s = 0) => {
-    const mm = Math.floor(s / 60).toString();
-    const ss = Math.floor(s % 60).toString().padStart(2, "0");
-    return `${mm}:${ss}`;
-  };
+  const format = (sec = 0) =>
+    `${Math.floor(sec / 60)}:${Math.floor(sec % 60)
+      .toString()
+      .padStart(2, "0")}`;
 
   return (
     <div className="w-full max-w-[300px]">
       <audio ref={audioRef} src={src} preload="metadata" />
 
-      <div
-        className="flex items-center gap-3 p-2 rounded-lg bg-white/6 border border-white/6 shadow-sm"
-        role="group"
-        aria-label="audio player"
-      >
+      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-2">
+
         <button
           onClick={togglePlay}
-          className="w-9 h-9 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition"
-          aria-pressed={playing}
-          aria-label={playing ? "Pause" : "Play"}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 transition hover:bg-red-600"
         >
-          {playing ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white" />}
+          {playing ? (
+            <Pause size={14} className="text-white" />
+          ) : (
+            <Play size={14} className="text-white" />
+          )}
         </button>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1">
+
           <div
             ref={progressRef}
             onClick={seek}
-            className="relative h-2 bg-white/10 rounded-full cursor-pointer"
-            role="slider"
-            aria-valuemin={0}
-            aria-valuemax={duration || 0}
-            aria-valuenow={current || 0}
+            className="relative h-2 cursor-pointer rounded-full bg-white/10"
           >
             <div
-              className="absolute left-0 top-0 bottom-0 bg-red-500 rounded-full"
-              style={{ width: `${duration ? (current / duration) * 100 : 0}%` }}
-            />
-            <div
-              className="absolute -translate-y-1/2 top-1/2 left-0 w-2.5 h-2.5 rounded-full bg-white shadow"
+              className="absolute inset-y-0 left-0 rounded-full bg-red-500"
               style={{
-                left: `${duration ? (current / duration) * 100 : 0}%`,
-                transform: "translate(-50%, -50%)",
+                width: `${
+                  duration
+                    ? (current / duration) * 100
+                    : 0
+                }%`,
+              }}
+            />
+
+            <div
+              className="absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white"
+              style={{
+                left: `${
+                  duration
+                    ? (current / duration) * 100
+                    : 0
+                }%`,
+                transform: "translate(-50%,-50%)",
               }}
             />
           </div>
 
-          <div className="mt-1 flex items-center justify-between text-xs text-zinc-300">
+          <div className="mt-1 flex justify-between text-xs text-zinc-400">
             <span>{format(current)}</span>
             <span>{format(duration)}</span>
           </div>
+
         </div>
 
         <div className="flex items-center gap-2">
-          <Volume2 size={14} className="text-zinc-300" />
+
+          <Volume2 size={15} className="text-zinc-300" />
+
           <input
             type="range"
             min={0}
             max={1}
             step={0.01}
             value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
+            onChange={(e) =>
+              setVolume(Number(e.target.value))
+            }
             className="w-20 accent-red-500"
-            aria-label="volume"
           />
+
         </div>
       </div>
     </div>
   );
 };
 
-/**
- * MessageBubble - compact, polished, and prevents content clipping.
- */
+/* -------------------------------------------------------------------------- */
+/*                              Message Bubble                                */
+/* -------------------------------------------------------------------------- */
+
 const MessageBubble = ({ message, own }) => {
   const time = new Date(message.created_at).toLocaleTimeString([], {
     hour: "numeric",
@@ -142,62 +164,76 @@ const MessageBubble = ({ message, own }) => {
   });
 
   const renderMessageContent = () => {
-    switch (message.message_type) {
+        switch (message.message_type) {
+
       case "text":
         return (
           <p
-            className="relative text-sm leading-6 break-words text-white"
-            style={{ wordBreak: "break-word" }}
+            className="
+              text-sm
+              leading-6
+              text-white
+              whitespace-pre-wrap
+              break-words
+              break-all
+              max-w-full
+            "
           >
             {message.message}
           </p>
         );
 
       case "image":
-  return (
-    <img
-      src={message.message}
-      alt={message.alt || "uploaded image"}
-      className="
-        max-w-[300px]
-        w-auto
-        rounded-xl
-        object-cover
-        cursor-pointer
-        transition-transform
-        duration-200
-        hover:scale-105
-      "
-      loading="lazy"
-      style={{ display: "block" }}
-      onClick={async () => {
-        try {
-          const response = await fetch(message.message);
-          const blob = await response.blob();
+        return (
+          <img
+            src={message.message}
+            alt={message.alt || "uploaded image"}
+            loading="lazy"
+            className="
+              block
+              max-w-full
+              md:max-w-[320px]
+              rounded-xl
+              object-cover
+              cursor-pointer
+              transition-transform
+              duration-200
+              hover:scale-[1.02]
+            "
+            onClick={async () => {
+              try {
+                const response = await fetch(message.message);
+                const blob = await response.blob();
 
-          const url = window.URL.createObjectURL(blob);
+                const url = window.URL.createObjectURL(blob);
 
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `image-${Date.now()}.jpg`;
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `image-${Date.now()}.jpg`;
 
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
 
-          window.URL.revokeObjectURL(url);
-        } catch (error) {
-          console.error("Download failed:", error);
-        }
-      }}
-    />
-  );
+                window.URL.revokeObjectURL(url);
+              } catch (err) {
+                console.error(err);
+              }
+            }}
+          />
+        );
 
       case "video":
         return (
           <video
             controls
-            className="max-w-[300px] w-full rounded-xl overflow-hidden"
+            className="
+              block
+              w-full
+              max-w-[320px]
+              rounded-xl
+              overflow-hidden
+            "
           >
             <source src={message.message} />
           </video>
@@ -212,18 +248,37 @@ const MessageBubble = ({ message, own }) => {
             href={message.message}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl bg-black/20 border border-white/10 hover:border-red-500/30 transition duration-200 max-w-[320px]"
+            className="
+              flex
+              items-center
+              gap-3
+              rounded-xl
+              border
+              border-white/10
+              bg-black/20
+              p-3
+              transition
+              hover:border-red-500/30
+              max-w-[320px]
+            "
           >
-            <div className="w-12 h-12 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-500/15">
               <FileText size={22} className="text-red-400" />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-medium truncate">PDF Document</p>
-              <p className="text-zinc-500 text-sm truncate">Click to open</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-white">
+                PDF Document
+              </p>
+              <p className="truncate text-sm text-zinc-500">
+                Click to open
+              </p>
             </div>
 
-            <Download size={18} className="text-zinc-400 flex-shrink-0" />
+            <Download
+              size={18}
+              className="text-zinc-400"
+            />
           </a>
         );
 
@@ -233,111 +288,152 @@ const MessageBubble = ({ message, own }) => {
             href={message.message}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl bg-black/20 border border-white/10 hover:border-red-500/30 transition duration-200 max-w-[360px]"
+            className="
+              flex
+              items-center
+              gap-3
+              rounded-xl
+              border
+              border-white/10
+              bg-black/20
+              p-3
+              transition
+              hover:border-red-500/30
+              max-w-[360px]
+            "
           >
-            <div className="w-12 h-12 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-500/15">
               <FileText size={22} className="text-red-400" />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-medium truncate">File</p>
-              <p className="text-zinc-500 text-sm truncate">Click to open or download</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-white">
+                File
+              </p>
+
+              <p className="truncate text-sm text-zinc-500">
+                Click to open or download
+              </p>
             </div>
 
             <button
               onClick={(e) => {
                 e.preventDefault();
-                const link = document.createElement("a");
+
+                const link =
+                  document.createElement("a");
+
                 link.href = message.message;
                 link.download = "";
+
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
               }}
-              className="w-9 h-9 rounded-full bg-white/5 hover:bg-red-500 transition flex items-center justify-center flex-shrink-0"
-              aria-label="download file"
+              className="
+                flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-full
+                bg-white/5
+                transition
+                hover:bg-red-500
+              "
             >
-              <Download size={16} className="text-white" />
+              <Download
+                size={16}
+                className="text-white"
+              />
             </button>
           </a>
         );
 
       default:
         return (
-          <div className="p-3 rounded-xl bg-black/20 border border-white/10 max-w-[300px]">
-            <p className="text-xs text-zinc-500">Unsupported file type</p>
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+            <p className="text-xs text-zinc-500">
+              Unsupported file type
+            </p>
           </div>
         );
     }
   };
-
-  // small SVG tail that flips left/right
-  const BubbleTail = ({ right }) => (
-    <svg
-      width="16"
-      height="12"
-      viewBox="0 0 16 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`absolute bottom-0 ${right ? "right-[-6px]" : "left-[-6px]"}`}
-      aria-hidden="true"
+    return (
+    <div
+      className={`flex w-full mb-3 ${
+        own ? "justify-end" : "justify-start"
+      }`}
     >
-      <path
-        d={right ? "M0 0 L16 0 L8 12 Z" : "M16 0 L0 0 L8 12 Z"}
-        fill={own ? "url(#g)" : "rgba(255,255,255,0.04)"}
-      />
-      <defs>
-        <linearGradient id="g" x1="0" x2="1">
-          <stop offset="0%" stopColor="#ef4444" stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#dc2626" stopOpacity="0.95" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-
-  return (
-    <div className={`flex mb-3 ${own ? "justify-end" : "justify-start"} px-2`}>
       <div
         className={`
-          relative
-          max-w-[66%]
-          px-3
-          py-2
-          transition-transform
-          duration-200
-          hover:scale-[1.01]
+          w-fit
+          max-w-[85%]
+          sm:max-w-[78%]
+          md:max-w-[65%]
         `}
       >
-        <div className={`relative overflow-visible ${own ? "ml-4" : "mr-4"} ${own ? "text-right" : "text-left"}`}>
-          <div
-            className={`
-              inline-block
-              align-bottom
-              px-3
-              py-2
-              rounded-xl
-              ${own ? "rounded-br-md" : "rounded-bl-md"}
-              ${own ? "bg-gradient-to-br from-red-500 to-red-600" : "bg-white/[0.03]"}
-              ${own ? "shadow-[0_6px_24px_rgba(239,68,68,0.18)]" : "shadow-[0_6px_18px_rgba(0,0,0,0.35)]"}
-              border
-              ${own ? "border-transparent" : "border-white/6"}
-            `}
-            role="article"
-            aria-label={own ? "your message" : "incoming message"}
-          >
-            {own && (
-              <div className="absolute inset-0 rounded-xl pointer-events-none bg-gradient-to-b from-white/6 to-transparent" aria-hidden="true" />
-            )}
+        <div
+          className={`
+            relative
+            rounded-2xl
+            px-3
+            py-2
+            border
+            overflow-hidden
 
-            <div className="relative z-10 min-w-0">{renderMessageContent()}</div>
+            ${
+              own
+                ? `
+                  bg-gradient-to-br
+                  from-red-500
+                  to-red-600
+                  border-transparent
+                  rounded-br-md
+                  shadow-[0_6px_24px_rgba(239,68,68,0.18)]
+                `
+                : `
+                  bg-white/[0.03]
+                  border-white/10
+                  rounded-bl-md
+                  shadow-[0_6px_18px_rgba(0,0,0,0.35)]
+                `
+            }
+          `}
+        >
+          {own && (
+            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+          )}
 
-            <div className={`mt-2 flex items-center justify-end gap-2 text-[11px] ${own ? "text-red-100/80" : "text-zinc-400"}`}>
-              <span className="select-none">{time}</span>
-              {own && <span className="text-xs select-none">{message.is_read ? "✓✓" : "✓"}</span>}
-            </div>
+          <div className="relative z-10">
+            {renderMessageContent()}
           </div>
 
-          {/* <BubbleTail right={own} /> */}
+          <div
+            className={`
+              mt-2
+              flex
+              items-center
+              justify-end
+              gap-2
+              text-[11px]
+
+              ${
+                own
+                  ? "text-red-100/80"
+                  : "text-zinc-400"
+              }
+            `}
+          >
+            <span>{time}</span>
+
+            {own && (
+              <span>
+                {message.is_read ? "✓✓" : "✓"}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

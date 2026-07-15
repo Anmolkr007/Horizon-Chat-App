@@ -1,14 +1,21 @@
-import { Clock3, X } from "lucide-react";
+import { Clock3, X, ArrowLeft } from "lucide-react";
 import { useChatStore } from "../store/chatStore.js";
+
 const FriendRequestSentPage = ({ user }) => {
-  const { deleteRequest, requestLoading } = useChatStore();
-  const handleClick = ()=>{
-    try{
+  const {
+    deleteRequest,
+    requestLoading,
+    setSelectedUser,
+  } = useChatStore();
+
+  const handleClick = () => {
+    try {
       deleteRequest();
     } catch (error) {
       console.error("Error occurred while deleting friend request:", error);
     }
-  }
+  };
+
   return (
     <div className="relative h-full flex items-center justify-center overflow-hidden bg-[#090909]">
 
@@ -20,6 +27,7 @@ const FriendRequestSentPage = ({ user }) => {
         className="
           relative
           w-[580px]
+          max-w-[92vw]
           rounded-[42px]
           border border-white/5
           bg-[#121212]/95
@@ -28,6 +36,36 @@ const FriendRequestSentPage = ({ user }) => {
           overflow-hidden
         "
       >
+        {/* Mobile Back Button */}
+        <button
+          onClick={() => setSelectedUser(null)}
+          className="
+            md:hidden
+            absolute
+            top-5
+            left-5
+            z-20
+            w-11
+            h-11
+            rounded-full
+            bg-white/[0.03]
+            border border-white/5
+            flex
+            items-center
+            justify-center
+            text-zinc-300
+            transition-all
+            duration-300
+            hover:text-white
+            hover:bg-red-500/10
+            hover:border-red-500/20
+            hover:shadow-[0_0_25px_rgba(239,68,68,0.25)]
+          "
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        {/* subtle top glow */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
 
         <div className="px-12 py-14 text-center">
@@ -101,6 +139,7 @@ const FriendRequestSentPage = ({ user }) => {
           <p className="mt-8 text-sm text-zinc-600">
             You will be notified when {user?.name} responds.
           </p>
+
         </div>
       </div>
     </div>
