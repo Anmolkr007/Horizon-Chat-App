@@ -66,6 +66,11 @@ export const getMessagesById = async (req, res) => {
         }
         //if you are here means both are friend and status is accepted
         //showing all messages if both are friend
+        //update all messages from receiver to sender as read
+        await sql`UPDATE messages
+        SET is_read = true
+        WHERE sender_id = ${receiverId} AND receiver_id = ${senderId} AND is_read = false RETURNING id;`;
+        
         const result = await sql`SELECT *
                 FROM messages
                 WHERE
@@ -73,11 +78,7 @@ export const getMessagesById = async (req, res) => {
                     OR
                 (sender_id = ${receiverId} AND receiver_id = ${senderId})
                 ORDER BY created_at ASC`;
-        //update all messages from receiver to sender as read
-        const updated = await sql`UPDATE messages
-                SET is_read = true
-                WHERE sender_id = ${receiverId} AND receiver_id = ${senderId} AND is_read = false RETURNING id;`;
-
+                
         const receiverSocketId = getReceiverSocketId(receiverId);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("allMessageRead", {readerId:senderId});

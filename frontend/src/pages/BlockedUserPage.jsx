@@ -6,11 +6,14 @@ const BlockedUserPage = ({ user }) => {
     handleRequest,
     requestLoading,
     setSelectedUser,
+    selectedUser,
+    getUserById
   } = useChatStore();
 
   const handleUnblock = async () => {
     try {
       await handleRequest("unblocked");
+      await getUserById(selectedUser.id,selectedUser.profilepic_url,selectedUser.name);
     } catch (error) {
       console.error("Error unblocking user:", error);
     }
