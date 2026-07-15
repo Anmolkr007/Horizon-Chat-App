@@ -17,6 +17,7 @@ const UserProfile = () => {
   const {
     user,
     isLoading,
+    isSubmitting,
     logout,
     updateProfile
   } = useAuthStore();
@@ -517,7 +518,7 @@ const UserProfile = () => {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="
               mt-5
               w-full
@@ -535,7 +536,7 @@ const UserProfile = () => {
           >
 
             {
-              isLoading
+              isSubmitting
               ? (
                 <div className="
                   flex

@@ -10,6 +10,7 @@ export const useAuthStore = create((set,get) => ({
     accessToken: null,
     error: null,
     isLoading: false,
+    isSubmitting: false,
     isAuthenticated: false,
     isCheckingAuth: true,
     socket: null,
@@ -18,7 +19,7 @@ export const useAuthStore = create((set,get) => ({
   try {
     const { accessToken: token } = get();
 
-    set({ isLoading: true, error: null });
+    set({ isSubmitting: true, error: null });
 
     const response = await axios.post(
       "/api/auth/updateProfile",
@@ -35,13 +36,13 @@ export const useAuthStore = create((set,get) => ({
           ...state.user,
           ...response.data.user,
         },
-      isLoading: false,
+      isSubmitting: false,
     }));
 
     toast.success(response.data.message||"Profile updated successfully");
   } catch (error) {
     set({
-      isLoading: false,
+      isSubmitting: false,
       error: error.response?.data?.message,
     });
 
