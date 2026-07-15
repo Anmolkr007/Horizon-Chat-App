@@ -11,7 +11,13 @@ import { useChatStore } from "../store/chatStore.js";
 import { useAuthStore } from "../store/authStore.js";
 
 const ChatContainer = ({ user }) => {
-  const { messages, subscribeToMessage, unsubscribeFromMessage,selectedUser } = useChatStore();
+  const {
+    messages,
+    subscribeToMessage,
+    unsubscribeFromMessage,
+    selectedUser,
+  } = useChatStore();
+
   const { user: currentUser } = useAuthStore();
 
   const messagesContainerRef = useRef(null);
@@ -35,22 +41,20 @@ const ChatContainer = ({ user }) => {
       behavior: "smooth",
     });
   }, [messages]);
+
   useEffect(() => {
     if (!selectedUser) return;
 
     if (selectedUser.relationshipStatus !== "accepted") {
-        return;
+      return;
     }
 
     subscribeToMessage();
 
     return () => {
-        unsubscribeFromMessage();
+      unsubscribeFromMessage();
     };
-}, [selectedUser?.id, selectedUser?.relationshipStatus]);
-
-console.log("messages:", messages);
-console.log("isArray:", Array.isArray(messages));
+  }, [selectedUser?.id, selectedUser?.relationshipStatus]);
 
   return (
     <div className="h-full flex flex-col bg-[#090909] relative overflow-hidden">
@@ -66,8 +70,10 @@ console.log("isArray:", Array.isArray(messages));
           flex-1
           overflow-y-auto
           no-scrollbar
-          px-8
-          py-6
+          px-3
+          md:px-8
+          py-4
+          md:py-6
           relative
           z-10
         "
