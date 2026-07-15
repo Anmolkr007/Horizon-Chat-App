@@ -2,12 +2,14 @@ import { useChatStore } from "../store/chatStore.js";
 
 
 const UserCard = ({user,online}) => {
-  const {getUserById,notifications,clearNotifications} = useChatStore();
+  const {isMessageLoading,getUserById,notifications,clearNotifications} = useChatStore();
   const unreadCount = notifications[user.id] || 0;
   const handleClick = async()=>{
     try {
+      if(!isMessageLoading){
       clearNotifications(user.id);
       await getUserById(user.id,user.profilepic_url,user.name)
+      }
     } catch (error) {
       console.log(error);
       
