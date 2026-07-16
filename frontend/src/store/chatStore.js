@@ -219,7 +219,17 @@ export const useChatStore = create((set,get) => ({
     getUserById : async(id,profilepic,name)=>{
         try {
             const { accessToken:token } = useAuthStore.getState();
-            set({isMessageLoading:true,error:null});
+            set({
+            error: null,
+            isMessageLoading: true,
+            selectedUser: {
+                id,
+                name,
+                profilepic_url: profilepic,
+            },
+            messages: [],
+        });
+            // set({isMessageLoading:true,error:null});
             const response = await axios.get(`/api/messages/${id}`,{headers: {Authorization: `Bearer ${token}`}});
             set({
                 isMessageLoading: false,
@@ -239,6 +249,7 @@ export const useChatStore = create((set,get) => ({
             console.log("error in axios getUserById:",error);
             
             set({
+                selectedUser: null,
                 error: error.response.data.message,
                 isMessageLoading: false
             })

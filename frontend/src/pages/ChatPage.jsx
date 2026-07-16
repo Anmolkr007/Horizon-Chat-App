@@ -15,7 +15,7 @@ const ChatPage = () => {
   let content;
 
   // Loading
-  if (isMessageLoading) {
+  if (selectedUser && isMessageLoading) {
     content = (
       <div className="flex flex-col items-center justify-center h-full gap-5">
         <div className="relative">
