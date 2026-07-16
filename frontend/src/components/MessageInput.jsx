@@ -193,32 +193,40 @@ const MessageInput = () => {
       fileInputRef.current.value = "";
     }
   };
-    const handleSend = async () => {
-    if (!text.trim() && !selectedFile) return;
+const handleSend = async () => {
+  if (!text.trim() && !selectedFile) return;
 
-    const formData = new FormData();
+  const currentText = text.trim();
+  const currentFile = selectedFile;
 
-    if (selectedFile) {
-      formData.append("file", selectedFile);
-    } else {
-      formData.append("message", text.trim());
-    }
+  const formData = new FormData();
 
-    try {
-      await sendMessage(formData, selectedUser.id);
+  if (currentFile) {
+    formData.append("file", currentFile);
+  } else {
+    formData.append("message", currentText);
+  }
 
-      setText("");
-      setSelectedFile(null);
-      setRecordingTime(0);
+  // Clear UI immediately
+  setText("");
+  setSelectedFile(null);
+  setRecordingTime(0);
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  if (fileInputRef.current) {
+    fileInputRef.current.value = "";
+  }
 
+  try {
+    await sendMessage(
+      formData,
+      selectedUser.id,
+      currentFile,
+      currentText
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
   const renderPreview = () => {
     if (!selectedFile) return null;
 
@@ -296,7 +304,6 @@ const MessageInput = () => {
             {!isRecording && (
               <button
                 type="button"
-                disabled={isUploading}
                 onClick={() =>
                   fileInputRef.current.click()
                 }
@@ -322,7 +329,6 @@ const MessageInput = () => {
               value={text}
               maxLength={MAX_MESSAGE_LENGTH}
               disabled={
-                isUploading ||
                 isRecording
               }
               onChange={handleChange}
@@ -378,7 +384,6 @@ const MessageInput = () => {
             ) : (
               <button
                 type="button"
-                disabled={isUploading}
                 onClick={startRecording}
                 className="
                   w-12
@@ -398,30 +403,25 @@ const MessageInput = () => {
             )}
           </>
         ) : (
-          <div className="flex-1 flex items-center gap-4 px-2">
+          <div className="flex-1 min-w-0 flex items-center gap-4 px-2 overflow-hidden">
             {renderPreview()}
 
-            <div className="flex-1 min-w-0">
-              <p className="text-white truncate font-medium">
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className="w-full truncate text-white font-medium">
                 {selectedFile.name}
               </p>
 
-              {isUploading ? (
-                <p className="text-red-400 text-sm">
-                  Uploading...
-                </p>
-              ) : (
                 <p className="text-zinc-500 text-sm">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
-              )}
+              
             </div>
 
-            {!isUploading && (
               <button
                 type="button"
                 onClick={removeFile}
                 className="
+                  shrink-0
                   w-10
                   h-10
                   rounded-full
@@ -437,18 +437,18 @@ const MessageInput = () => {
                   className="text-zinc-400"
                 />
               </button>
-            )}
+            
           </div>
         )}
                 <button
           type="submit"
           disabled={
-            isUploading ||
             isRecording ||
             (!text.trim() && !selectedFile)
           }
           className="
             ml-2
+            shrink-0
             w-12
             h-12
             rounded-full
@@ -464,21 +464,7 @@ const MessageInput = () => {
             disabled:cursor-not-allowed
           "
         >
-          {isUploading ? (
-            <div
-              className="
-                w-5
-                h-5
-                rounded-full
-                border-2
-                border-white/30
-                border-t-white
-                animate-spin
-              "
-            />
-          ) : (
             <Send size={18} />
-          )}
         </button>
       </form>
     </div>

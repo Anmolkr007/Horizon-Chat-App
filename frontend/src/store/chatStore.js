@@ -143,22 +143,77 @@ export const useChatStore = create((set,get) => ({
         });
     }
 },
-    sendMessage : async (formData,id)=>{
+    sendMessage : async ( formData,id, selectedFile, text)=>{
+        //creating optimisticMessage
+            const { user } = useAuthStore.getState();
+            let optimisticMessage = {
+                id: `temp-${Date.now()}`,
+                sender_id: user.id,
+                receiver_id: id,
+                message: "",
+                message_type: "text",
+                created_at: new Date().toISOString(),
+                //this extra field will be used for showing sending loader
+                isSending: true,
+            };
+        
         try {
-            const {messages} = get();
+            //if file not exist , this means message is text
+            if (!selectedFile) {
+                optimisticMessage.message = text;
+                optimisticMessage.message_type = "text";
+            }
+            //if file exist then check its type
+            if (selectedFile) {
+                const preview = URL.createObjectURL(selectedFile);
+                optimisticMessage.message = preview;
+
+                if (selectedFile.type.startsWith("image/"))
+                    optimisticMessage.message_type = "image";
+
+                else if (selectedFile.type.startsWith("video/"))
+                    optimisticMessage.message_type = "video";
+
+                else if (selectedFile.type.startsWith("audio/"))
+                    optimisticMessage.message_type = "audio";
+
+                else
+                    optimisticMessage.message_type = "file";
+            }
+
             const { accessToken:token } = useAuthStore.getState();
-            set({isUploading:true});
+            set((state) => ({
+                isUploading:true,
+                messages: [...state.messages, optimisticMessage],
+            }));
             const response = await axios.post(`/api/messages/sendMessage/${id}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
-            set({isUploading:false,messages:[...messages,response.data.sentMessage]});
+            set(state=>({
+                isUploading:false,
+                messages: state.messages.map(msg =>
+                    msg.id === optimisticMessage.id
+                        ? response.data.sentMessage
+                        : msg
+                )
+            }));
         } catch (error) {
-            set({isUploading:false,error:error.response.data.message});
-            toast.error(error.response.data?.message || "Failed to send message.");
+            set(state=>({
+                isUploading:false,
+                messages: state.messages.filter(
+                    msg => msg.id !== optimisticMessage.id
+                )
+            }));
+            toast.error(error.response?.data?.message || "Failed to send message.");
             console.log("error in axios sendMessage:",error);
             throw error;
+        }
+        finally {
+            if (selectedFile && optimisticMessage?.message?.startsWith("blob:")) {
+                URL.revokeObjectURL(optimisticMessage.message);
+            }
         }
     },
     getUserById : async(id,profilepic,name)=>{

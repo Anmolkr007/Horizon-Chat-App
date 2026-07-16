@@ -5,6 +5,7 @@ import {
   Play,
   Pause,
   Volume2,
+  LoaderCircle
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
@@ -429,10 +430,19 @@ const MessageBubble = ({ message, own }) => {
             <span>{time}</span>
 
             {own && (
-              <span>
-                {message.is_read ? "✓✓" : "✓"}
-              </span>
-            )}
+  <span className="flex items-center justify-center w-4 h-4">
+    {message.isSending ? (
+      <LoaderCircle
+        size={14}
+        className="animate-spin text-white/70"
+      />
+    ) : (
+      <span>
+        {message.is_read ? "✓✓" : "✓"}
+      </span>
+    )}
+  </span>
+)}
           </div>
         </div>
       </div>
