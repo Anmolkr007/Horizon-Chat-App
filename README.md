@@ -38,6 +38,7 @@ HorizonChat is a full-stack messaging platform that provides secure authenticati
 - Online/Offline indicators
 - Message read receipts
 - Online user communication
+- Optimistic updates added for instantly display a sent message in the UI before receiving server confirmation for seamless user experience
 
 ---
 
