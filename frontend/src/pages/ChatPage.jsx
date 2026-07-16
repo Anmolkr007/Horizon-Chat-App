@@ -80,7 +80,7 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="h-full bg-black text-white flex overflow-hidden">
+    <div className="h-screen bg-black text-white flex overflow-hidden">
 
       {/* Sidebar */}
       <div
